@@ -16,21 +16,32 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
           ACTOR="${{ github.actor }}"
+          COMMIT="${{ github.event.head_commit.message }}"
 
           if [ "$EVENT" = "pull_request" ]; then
             ACTION="${{ github.event.action }}"
+            TITLE="${{ github.event.pull_request.title }}"
             MERGED="${{ github.event.pull_request.merged }}"
 
             if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
-              TEXT=$'🔥 PR MERGED\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
+              STATUS="🔥 MERGED"
+              ICON="🚀"
+            elif [ "$ACTION" = "opened" ]; then
+              STATUS="📢 OPENED"
+              ICON="🆕"
             else
-              TEXT=$'🔄 PR EVENT\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
+              STATUS="🔄 UPDATED"
+              ICON="⚙️"
             fi
+
+            TEXT=$'📦 *GITHUB PULL REQUEST*\n━━━━━━━━━━━━━━\n'$ICON' Status: '"$STATUS"$'\n📌 Title: '"$TITLE"$'\n🌿 Branch: '"$BRANCH"$'\n👤 By: '"$ACTOR"$'\n\n📁 Repo: '"$REPO"$'\n━━━━━━━━━━━━━━'
+
           else
-            TEXT=$'🚀 PUSH EVENT\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
+            TEXT=$'🚀 *GITHUB PUSH EVENT*\n━━━━━━━━━━━━━━\n📌 Commit: '"$COMMIT"$'\n🌿 Branch: '"$BRANCH"$'\n👤 By: '"$ACTOR"$'\n📁 Repo: '"$REPO"$'\n━━━━━━━━━━━━━━'
           fi
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d message_thread_id="${{ secrets.TELEGRAM_THREAD_ID }}" \
-            --data-urlencode "text=$TEXT"
+            --data-urlencode "text=$TEXT" \
+            -d parse_mode="Markdown"
