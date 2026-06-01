@@ -1,4 +1,4 @@
-name: LuyPOS Telegram Notify
+name: LuyPOS Notifications
 
 on:
   push:
@@ -10,20 +10,21 @@ on:
     types:
       - opened
       - closed
+      - reopened
 
 jobs:
-  notify:
+  telegram:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Telegram Message
+      - name: Send Telegram Notification
         run: |
           curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           -d chat_id="-1003941994826" \
           -d message_thread_id="2" \
-          -d text="🚀 LuyPOS
+          -d text="🚀 LuyPOS Notification
 
 Repository: ${{ github.repository }}
+Event: ${{ github.event_name }}
 Branch: ${{ github.ref_name }}
-Author: ${{ github.actor }}
-Event: ${{ github.event_name }}"
+Author: ${{ github.actor }}"
