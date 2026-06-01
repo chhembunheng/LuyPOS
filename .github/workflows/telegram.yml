@@ -1,0 +1,17 @@
+name: Telegram Notify
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Telegram Message
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="🚀 LuyPOS Update:%0ARepo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0ACommit: ${{ github.event.head_commit.message }}"
