@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Send Telegram Notification
         run: |
+          set -e
+
           EVENT="${{ github.event_name }}"
           BRANCH="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
@@ -23,36 +25,28 @@ jobs:
             TITLE="${{ github.event.pull_request.title }}"
             MERGED="${{ github.event.pull_request.merged }}"
 
+            STATUS="⚙️ UPDATED"
+            ICON="🔄"
+
+            if [ "$ACTION" = "opened" ]; then
+              STATUS="🆕 OPENED"
+              ICON="📢"
+            fi
+
             if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
               STATUS="🔥 MERGED"
               ICON="🚀"
-            elif [ "$ACTION" = "opened" ]; then
-              STATUS="🆕 OPENED"
-              ICON="📢"
-            else
-              STATUS="⚙️ UPDATED"
-              ICON="🔄"
             fi
 
-            TEXT=$'📦 GITHUB PULL REQUEST\n━━━━━━━━━━━━━━━━━━━━━━\n\n'\
-'🚦 Status\n   → '"$ICON $STATUS"$'\n\n'\
-'📌 Title\n   → '"$TITLE"$'\n\n'\
-'🌿 Branch\n   → '"$BRANCH"$'\n\n'\
-'👤 Author\n   → '"$ACTOR"$'\n\n'\
-'📁 Repository\n   → '"$REPO"$'\n\n'\
-'━━━━━━━━━━━━━━━━━━━━━━'
+            TEXT=$(printf "📦 GITHUB PULL REQUEST\n━━━━━━━━━━━━━━━━━━━━━━\n\n🚦 Status\n   → %s %s\n\n📌 Title\n   → %s\n\n🌿 Branch\n   → %s\n\n👤 Author\n   → %s\n\n📁 Repository\n   → %s\n\n━━━━━━━━━━━━━━━━━━━━━━" \
+              "$ICON" "$STATUS" "$TITLE" "$BRANCH" "$ACTOR" "$REPO")
 
           else
-            TEXT=$'🚀 GITHUB PUSH EVENT\n━━━━━━━━━━━━━━━━━━━━━━\n\n'\
-'📌 Commit\n   → '"$COMMIT"$'\n\n'\
-'🌿 Branch\n   → '"$BRANCH"$'\n\n'\
-'👤 Author\n   → '"$ACTOR"$'\n\n'\
-'📁 Repository\n   → '"$REPO"$'\n\n'\
-'━━━━━━━━━━━━━━━━━━━━━━'
+            TEXT=$(printf "🚀 GITHUB PUSH EVENT\n━━━━━━━━━━━━━━━━━━━━━━\n\n📌 Commit\n   → %s\n\n🌿 Branch\n   → %s\n\n👤 Author\n   → %s\n\n📁 Repository\n   → %s\n\n━━━━━━━━━━━━━━━━━━━━━━" \
+              "$COMMIT" "$BRANCH" "$ACTOR" "$REPO")
           fi
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d message_thread_id="${{ secrets.TELEGRAM_THREAD_ID }}" \
-            --data-urlencode "text=$TEXT" \
-            -d parse_mode="Markdown"
+            --data-urlencode "text=$TEXT"
