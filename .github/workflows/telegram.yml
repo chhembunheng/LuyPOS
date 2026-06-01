@@ -2,7 +2,7 @@ name: LuyPOS Telegram Notifications
 
 on:
   push: {}
-
+ 
   pull_request:
     types:
       - opened
