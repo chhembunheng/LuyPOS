@@ -1,0 +1,6 @@
+@LuyPOS.Api_HostAddress = http://localhost:5178
+
+GET {{LuyPOS.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
