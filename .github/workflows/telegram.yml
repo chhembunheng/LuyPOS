@@ -1,16 +1,14 @@
-name: LuyPOS Notifications
+name: LuyPOS Telegram Notifications
 
 on:
-  push:
-    branches:
-      - develop
-      - main
+  push: {}
 
   pull_request:
     types:
       - opened
       - closed
       - reopened
+      - synchronize
 
 jobs:
   telegram:
@@ -19,12 +17,43 @@ jobs:
     steps:
       - name: Send Telegram Notification
         run: |
-          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          EVENT="${{ github.event_name }}"
+          BRANCH="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          ACTOR="${{ github.actor }}"
+
+          if [ "$EVENT" = "pull_request" ]; then
+            ACTION="${{ github.event.action }}"
+            MERGED="${{ github.event.pull_request.merged }}"
+
+            if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
+              TEXT="🔥 PR MERGED
+
+Repo: $REPO
+Branch: $BRANCH
+By: $ACTOR"
+            elif [ "$ACTION" = "opened" ]; then
+              TEXT="📢 PR OPENED
+
+Repo: $REPO
+Branch: $BRANCH
+By: $ACTOR"
+            else
+              TEXT="🔄 PR UPDATED
+
+Repo: $REPO
+Branch: $BRANCH
+By: $ACTOR"
+            fi
+          else
+            TEXT="🚀 PUSH EVENT
+
+Repo: $REPO
+Branch: $BRANCH
+By: $ACTOR"
+          fi
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           -d chat_id="-1003941994826" \
           -d message_thread_id="2" \
-          -d text="🚀 LuyPOS Notification
-
-Repository: ${{ github.repository }}
-Event: ${{ github.event_name }}
-Branch: ${{ github.ref_name }}
-Author: ${{ github.actor }}"
+          --data-urlencode "text=$TEXT"
