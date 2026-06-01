@@ -12,22 +12,38 @@ jobs:
     steps:
       - name: Send Telegram Notification
         run: |
+          set -e
+
           EVENT="${{ github.event_name }}"
           BRANCH="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
           ACTOR="${{ github.actor }}"
+          COMMIT="${{ github.event.head_commit.message }}"
 
           if [ "$EVENT" = "pull_request" ]; then
             ACTION="${{ github.event.action }}"
+            TITLE="${{ github.event.pull_request.title }}"
             MERGED="${{ github.event.pull_request.merged }}"
 
-            if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
-              TEXT=$'🔥 PR MERGED\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
-            else
-              TEXT=$'🔄 PR EVENT\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
+            STATUS="⚙️ UPDATED"
+            ICON="🔄"
+
+            if [ "$ACTION" = "opened" ]; then
+              STATUS="🆕 OPENED"
+              ICON="📢"
             fi
+
+            if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
+              STATUS="🔥 MERGED"
+              ICON="🚀"
+            fi
+
+            TEXT=$(printf "📦 GITHUB PULL REQUEST\n━━━━━━━━━━━━━━━━━━━━━━\n\n🚦 Status\n   → %s %s\n\n📌 Title\n   → %s\n\n🌿 Branch\n   → %s\n\n👤 Author\n   → %s\n\n📁 Repository\n   → %s\n\n━━━━━━━━━━━━━━━━━━━━━━" \
+              "$ICON" "$STATUS" "$TITLE" "$BRANCH" "$ACTOR" "$REPO")
+
           else
-            TEXT=$'🚀 PUSH EVENT\n\nRepo: '"$REPO"$'\nBranch: '"$BRANCH"$'\nBy: '"$ACTOR"
+            TEXT=$(printf "🚀 GITHUB PUSH EVENT\n━━━━━━━━━━━━━━━━━━━━━━\n\n📌 Commit\n   → %s\n\n🌿 Branch\n   → %s\n\n👤 Author\n   → %s\n\n📁 Repository\n   → %s\n\n━━━━━━━━━━━━━━━━━━━━━━" \
+              "$COMMIT" "$BRANCH" "$ACTOR" "$REPO")
           fi
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
