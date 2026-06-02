@@ -1,4 +1,6 @@
+using LuyPOS.Domain.Interfaces.Repositories;
 using LuyPOS.Infrastructure.Persistence;
+using LuyPOS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +15,8 @@ public static class DependencyInjection
 
         services.AddDbContext<LuyPosDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        services.AddScoped<IProductRepository, ProductRepository>();
 
         return services;
     }

@@ -6,6 +6,7 @@ namespace LuyPOS.Infrastructure.Persistence;
 
 public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) : DbContext(options)
 {
+    public DbSet<Product> Products => Set<Product>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<UserTranslation> UserTranslations => Set<UserTranslation>();
@@ -37,6 +38,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         ConfigureAccessControl(modelBuilder);
         ConfigureSessionsAndSecurity(modelBuilder);
         ConfigureAudit(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(LuyPosDbContext).Assembly);
         UseSnakeCaseColumnNames(modelBuilder);
     }
 
