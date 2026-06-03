@@ -1,4 +1,4 @@
-using LuyPOS.Application.Common.Exceptions;
+using LuyPOS.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LuyPOS.Api.Middleware;
@@ -11,7 +11,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next)
         {
             await next(context);
         }
-        catch (ValidationException exception)
+        catch (RequestValidationException exception)
         {
             await WriteProblemDetailsAsync(
                 context,

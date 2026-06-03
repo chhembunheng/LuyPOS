@@ -1,9 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LuyPOS.Api/LuyPOS.Api.csproj" />
-    <Project Path="src/LuyPOS.Application/LuyPOS.Application.csproj" />
-    <Project Path="src/LuyPOS.Domain/LuyPOS.Domain.csproj" />
-    <Project Path="src/LuyPOS.Infrastructure/LuyPOS.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LuyPOS.Api.Tests/LuyPOS.Api.Tests.csproj" />
