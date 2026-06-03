@@ -19,6 +19,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<LuyPosDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
+
     app.MapOpenApi();
 }
 

@@ -89,3 +89,17 @@ cd frontend
 pnpm install
 pnpm run dev
 ```
+
+Run the full stack in Docker:
+
+```bash
+docker compose up -d --build
+```
+
+Docker ports:
+
+```text
+Frontend: http://localhost:3001
+Backend:  http://localhost:5178
+Postgres: localhost:5433
+```
