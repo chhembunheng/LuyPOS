@@ -1,6 +1,6 @@
 @LuyPOS.Api_HostAddress = http://localhost:5178
 
-GET {{LuyPOS.Api_HostAddress}}/weatherforecast/
+GET {{LuyPOS.Api_HostAddress}}/api/products
 Accept: application/json
 
 ###
