@@ -1,11 +1,15 @@
-using LuyPOS.Application;
 using LuyPOS.Api.Middleware;
-using LuyPOS.Infrastructure;
+using LuyPOS.Api.Data;
+using LuyPOS.Api.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<LuyPosDbContext>(options =>
+    options.UseNpgsql(connectionString));
+builder.Services.AddScoped<ProductService>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 

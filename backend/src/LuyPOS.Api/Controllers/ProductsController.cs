@@ -1,12 +1,12 @@
-using LuyPOS.Application.DTOs.Products;
-using LuyPOS.Application.Interfaces.Services;
+using LuyPOS.Api.Dtos;
+using LuyPOS.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LuyPOS.Api.Controllers;
 
 [ApiController]
 [Route("api/products")]
-public sealed class ProductsController(IProductService productService) : ControllerBase
+public sealed class ProductsController(ProductService productService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken cancellationToken)
