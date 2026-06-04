@@ -267,7 +267,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         {
             entity.ToTable("refresh_tokens");
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Token).HasMaxLength(255).IsRequired();
+            entity.Property(x => x.Token).HasMaxLength(1000).IsRequired();
             entity.Property(x => x.ExpiryDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(x => x.Revoked).HasDefaultValue(false);
             ConfigureSoftDeleteTimestamps(entity);
@@ -431,7 +431,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         where TEntity : class
     {
         entity.Property<string?>("IpAddress").HasMaxLength(45);
-        entity.Property<string?>("UserAgent").HasMaxLength(255);
+        entity.Property<string?>("UserAgent").HasMaxLength(1000);
         entity.Property<string?>("Browser").HasMaxLength(255);
         entity.Property<string?>("Platform").HasMaxLength(255);
     }
