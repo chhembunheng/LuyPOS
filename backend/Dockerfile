@@ -17,7 +17,7 @@ COPY . .
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1 \
     DOTNET_WATCH_RESTART_ON_RUDE_EDIT=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
-ENTRYPOINT ["dotnet", "watch", "--project", "src/LuyPOS.Api/LuyPOS.Api.csproj", "run", "--urls", "http://0.0.0.0:8080"]
+ENTRYPOINT ["dotnet", "watch", "--no-hot-reload", "--project", "src/LuyPOS.Api/LuyPOS.Api.csproj", "run", "--urls", "http://0.0.0.0:8080"]
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
