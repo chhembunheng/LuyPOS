@@ -6,7 +6,7 @@ namespace LuyPOS.Api.Controllers;
 
 [ApiController]
 [Route("api/products")]
-public sealed class ProductsController(ProductService productService) : ControllerBase
+public sealed class ProductsController(IProductService productService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken cancellationToken)

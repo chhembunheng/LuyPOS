@@ -1,7 +1,10 @@
+using System.Text.Json.Serialization;
+
 namespace LuyPOS.Api.Dtos;
 
 public sealed record ProductResponse(
     long Id,
+    [property: JsonPropertyName("guid")] Guid FrontendGuid,
     string Sku,
     string Name,
     string? Description,
