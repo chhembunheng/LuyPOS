@@ -1,31 +1,15 @@
-using LuyPOS.Api.Data;
 using LuyPOS.Api.Dtos;
 using LuyPOS.Api.Models;
-using Microsoft.EntityFrameworkCore;
+using LuyPOS.Api.Repositories;
 
 namespace LuyPOS.Api.Services;
 
-public sealed class ProductService(LuyPosDbContext dbContext)
+public sealed class ProductService(IProductRepository productRepository) : IProductService
 {
     public async Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.Products
-            .AsNoTracking()
-            .Where(product => product.DeletedAt == null)
-            .OrderBy(product => product.Name)
-            .Select(product => new ProductResponse(
-                product.Id,
-                product.Sku,
-                product.Name,
-                product.Description,
-                product.UnitPrice,
-                product.CostPrice,
-                product.QuantityOnHand,
-                product.ReorderLevel,
-                product.IsActive,
-                product.CreatedAt,
-                product.UpdatedAt))
-            .ToListAsync(cancellationToken);
+        var products = await productRepository.GetAllActiveAsync(cancellationToken);
+        return products.Select(product => product.ToResponse()).ToList();
     }
 
     public async Task<ProductResponse> GetByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -39,7 +23,7 @@ public sealed class ProductService(LuyPosDbContext dbContext)
         Validate(request);
         var sku = request.Sku.Trim();
 
-        if (await ExistsBySkuAsync(sku, cancellationToken: cancellationToken))
+        if (await productRepository.ExistsBySkuAsync(sku, cancellationToken: cancellationToken))
         {
             throw new RequestValidationException(["Product SKU already exists."]);
         }
@@ -56,8 +40,8 @@ public sealed class ProductService(LuyPosDbContext dbContext)
             IsActive = request.IsActive
         };
 
-        await dbContext.Products.AddAsync(product, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productRepository.AddAsync(product, cancellationToken);
+        await productRepository.SaveChangesAsync(cancellationToken);
 
         return product.ToResponse();
     }
@@ -69,7 +53,7 @@ public sealed class ProductService(LuyPosDbContext dbContext)
 
         var product = await GetProductOrThrowAsync(id, cancellationToken);
 
-        if (await ExistsBySkuAsync(sku, id, cancellationToken))
+        if (await productRepository.ExistsBySkuAsync(sku, id, cancellationToken))
         {
             throw new RequestValidationException(["Product SKU already exists."]);
         }
@@ -83,7 +67,7 @@ public sealed class ProductService(LuyPosDbContext dbContext)
         product.ReorderLevel = request.ReorderLevel;
         product.IsActive = request.IsActive;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productRepository.SaveChangesAsync(cancellationToken);
 
         return product.ToResponse();
     }
@@ -92,23 +76,13 @@ public sealed class ProductService(LuyPosDbContext dbContext)
     {
         var product = await GetProductOrThrowAsync(id, cancellationToken);
         product.DeletedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productRepository.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Product> GetProductOrThrowAsync(long id, CancellationToken cancellationToken)
     {
-        return await dbContext.Products
-            .FirstOrDefaultAsync(product => product.Id == id && product.DeletedAt == null, cancellationToken)
+        return await productRepository.GetActiveByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{id}' was not found.");
-    }
-
-    private async Task<bool> ExistsBySkuAsync(string sku, long? excludingProductId = null, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.Products.AnyAsync(
-            product => product.Sku == sku
-                && product.DeletedAt == null
-                && (!excludingProductId.HasValue || product.Id != excludingProductId.Value),
-            cancellationToken);
     }
 
     private static void Validate(CreateProductRequest request)
@@ -176,6 +150,7 @@ file static class ProductMapping
     {
         return new ProductResponse(
             product.Id,
+            product.FrontendGuid,
             product.Sku,
             product.Name,
             product.Description,

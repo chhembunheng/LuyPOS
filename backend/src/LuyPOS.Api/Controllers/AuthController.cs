@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LuyPOS.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public sealed class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]

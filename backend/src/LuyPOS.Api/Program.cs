@@ -1,6 +1,7 @@
 using System.Text;
 using LuyPOS.Api.Middleware;
 using LuyPOS.Api.Data;
+using LuyPOS.Api.Repositories;
 using LuyPOS.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<LuyPosDbContext>(options =>
     options.UseNpgsql(connectionString));
-builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services

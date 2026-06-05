@@ -1,17 +1,16 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using LuyPOS.Api.Data;
 using LuyPOS.Api.Dtos.User;
 using LuyPOS.Api.Models;
+using LuyPOS.Api.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace LuyPOS.Api.Services;
 
 public sealed class AuthService(
-    LuyPosDbContext dbContext,
+    IAuthRepository authRepository,
     IConfiguration configuration) : IAuthService
 {
     private readonly PasswordHasher<User> passwordHasher = new();
@@ -27,12 +26,12 @@ public sealed class AuthService(
         var username = request.Username.Trim();
         var email = request.Email.Trim();
 
-        if (await dbContext.Users.AnyAsync(user => user.Email == email, cancellationToken))
+        if (await authRepository.ExistsByEmailAsync(email, cancellationToken))
         {
             throw new RequestValidationException(["Email is already registered."]);
         }
 
-        if (await dbContext.Users.AnyAsync(user => user.Name == username, cancellationToken))
+        if (await authRepository.ExistsByUsernameAsync(username, cancellationToken))
         {
             throw new RequestValidationException(["Username is already registered."]);
         }
@@ -44,26 +43,26 @@ public sealed class AuthService(
         };
         user.Password = passwordHasher.HashPassword(user, request.Password);
 
-        await dbContext.Users.AddAsync(user, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await authRepository.AddUserAsync(user, cancellationToken);
+        await authRepository.SaveChangesAsync(cancellationToken);
 
         var refreshToken = GenerateRefreshToken(user);
-        await dbContext.RefreshTokens.AddAsync(new RefreshToken
+        await authRepository.AddRefreshTokenAsync(new RefreshToken
         {
             UserId = user.Id,
             Token = refreshToken,
             ExpiryDate = DateTime.UtcNow.AddDays(7)
         }, cancellationToken);
-        await dbContext.LoginHistories.AddAsync(new LoginHistory
+        await authRepository.AddLoginHistoryAsync(new LoginHistory
         {
             UserId = user.Id,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             LoginAt = DateTime.UtcNow
         }, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await authRepository.SaveChangesAsync(cancellationToken);
 
-        var roles = await GetRoleNamesAsync(user.Id, cancellationToken);
+        var roles = await authRepository.GetRoleNamesAsync(user.Id, cancellationToken);
 
         return new RegisterResponse(
             "User registered successfully.",
@@ -84,9 +83,7 @@ public sealed class AuthService(
         ValidateLogin(request);
 
         var username = request.Username.Trim();
-        var user = await dbContext.Users.FirstOrDefaultAsync(
-            candidate => candidate.Name == username || candidate.Email == username,
-            cancellationToken);
+        var user = await authRepository.GetByUsernameOrEmailAsync(username, cancellationToken);
 
         if (user is null || !user.Enabled)
         {
@@ -100,22 +97,22 @@ public sealed class AuthService(
         }
 
         var refreshToken = GenerateRefreshToken(user);
-        await dbContext.RefreshTokens.AddAsync(new RefreshToken
+        await authRepository.AddRefreshTokenAsync(new RefreshToken
         {
             UserId = user.Id,
             Token = refreshToken,
             ExpiryDate = DateTime.UtcNow.AddDays(7)
         }, cancellationToken);
-        await dbContext.LoginHistories.AddAsync(new LoginHistory
+        await authRepository.AddLoginHistoryAsync(new LoginHistory
         {
             UserId = user.Id,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             LoginAt = DateTime.UtcNow
         }, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await authRepository.SaveChangesAsync(cancellationToken);
 
-        var roles = await GetRoleNamesAsync(user.Id, cancellationToken);
+        var roles = await authRepository.GetRoleNamesAsync(user.Id, cancellationToken);
 
         return new UserLoginRespone("Login successful.", true, user.Name)
         {
@@ -124,19 +121,6 @@ public sealed class AuthService(
             Roles = roles,
             ExpiresIn = 7200
         };
-    }
-
-    private async Task<IReadOnlyCollection<string>> GetRoleNamesAsync(long userId, CancellationToken cancellationToken)
-    {
-        return await dbContext.UserRoles
-            .AsNoTracking()
-            .Where(userRole => userRole.UserId == userId && userRole.DeletedAt == null)
-            .SelectMany(userRole => userRole.Role.Translations
-                .Where(translation => translation.DeletedAt == null)
-                .Select(translation => translation.Name))
-            .Distinct()
-            .OrderBy(role => role)
-            .ToListAsync(cancellationToken);
     }
 
     private string GenerateAccessToken(User user, IReadOnlyCollection<string> roles)
