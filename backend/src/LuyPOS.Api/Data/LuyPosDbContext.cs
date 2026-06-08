@@ -61,6 +61,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         {
             entity.ToTable("products");
             entity.HasKey(product => product.Id);
+            entity.Property(product => product.FrontendGuid).HasColumnName("guid").IsRequired();
             entity.Property(product => product.Sku).HasMaxLength(64).IsRequired();
             entity.Property(product => product.Name).HasMaxLength(160).IsRequired();
             entity.Property(product => product.Description).HasMaxLength(500);
@@ -71,6 +72,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
             entity.Property(product => product.IsActive).HasDefaultValue(true);
             entity.Property(product => product.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(product => product.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(product => product.FrontendGuid).IsUnique().HasDatabaseName("idx_products_guid");
             entity.HasIndex(product => product.Sku).IsUnique().HasFilter("deleted_at IS NULL").HasDatabaseName("idx_products_sku_active");
             entity.HasIndex(product => product.Name).HasDatabaseName("idx_products_name");
             entity.HasIndex(product => product.IsActive).HasDatabaseName("idx_products_is_active");
@@ -267,7 +269,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         {
             entity.ToTable("refresh_tokens");
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Token).HasMaxLength(255).IsRequired();
+            entity.Property(x => x.Token).HasMaxLength(1000).IsRequired();
             entity.Property(x => x.ExpiryDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(x => x.Revoked).HasDefaultValue(false);
             ConfigureSoftDeleteTimestamps(entity);
@@ -431,7 +433,7 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         where TEntity : class
     {
         entity.Property<string?>("IpAddress").HasMaxLength(45);
-        entity.Property<string?>("UserAgent").HasMaxLength(255);
+        entity.Property<string?>("UserAgent").HasMaxLength(1000);
         entity.Property<string?>("Browser").HasMaxLength(255);
         entity.Property<string?>("Platform").HasMaxLength(255);
     }
@@ -475,6 +477,11 @@ public sealed class LuyPosDbContext(DbContextOptions<LuyPosDbContext> options) :
         {
             foreach (var property in entityType.GetProperties())
             {
+                if (property.FindAnnotation("Relational:ColumnName") is not null)
+                {
+                    continue;
+                }
+
                 property.SetColumnName(ToSnakeCase(property.Name));
             }
         }
